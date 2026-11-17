@@ -13,3 +13,6 @@ def convert_coordinates(pixel_coordinates, scale): #픽셀 좌표를 실제 좌�
     coor_y = pixel_coordinates[1] * scale
     real_coordinates = [coor_x, coor_y]
     return real_coordinates
+
+def set_origin(coordinates): #상대좌표 변환
+    pass
