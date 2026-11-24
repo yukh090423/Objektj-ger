@@ -9,10 +9,23 @@ def cal_scale(pixel_distance, real_distance): #픽셀 거리와 실제 거리를
     return scale
 
 def convert_coordinates(pixel_coordinates, scale): #픽셀 좌표를 실제 좌표로 변환
+    if pixel_coordinates is None:
+        return None
+
     coor_x = pixel_coordinates[0] * scale
     coor_y = pixel_coordinates[1] * scale
     real_coordinates = [coor_x, coor_y]
     return real_coordinates
 
-def set_origin(coordinates): #상대좌표 변환
-    pass
+def set_origin(coordinates):
+    """프레임별 좌표를 첫 검출 좌표 기준으로 옮기고 None을 보존한다."""
+    positions = list(coordinates)
+    origin = next((position for position in positions if position is not None), None)
+    if origin is None:
+        return positions
+
+    origin_x, origin_y = origin
+    return [
+        None if position is None else (position[0] - origin_x, position[1] - origin_y)
+        for position in positions
+    ]
