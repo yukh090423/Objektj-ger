@@ -1,0 +1,45 @@
+{
+  "video_file": "objektjaeger_blue_marker_test.mp4",
+  "calibration": {
+    "points_px": [
+      [
+        100,
+        330
+      ],
+      [
+        300,
+        330
+      ]
+    ],
+    "reference_length": 200,
+    "length_unit": "mm"
+  },
+  "tracking": {
+    "roi_xywh": [
+      40,
+      140,
+      410,
+      150
+    ]
+  },
+  "expected": {
+    "fps": 30,
+    "frame_count": 120,
+    "velocity_mm_s": [
+      90,
+      0
+    ],
+    "acceleration_mm_s2": [
+      0,
+      0
+    ],
+    "missing_position_frames": [
+      50,
+      54
+    ],
+    "missing_derivative_frames_due_to_gap": [
+      49,
+      55
+    ]
+  }
+}
