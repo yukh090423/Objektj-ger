@@ -1,6 +1,7 @@
 from math import isfinite
 
 from .calibration import cal_pixel, cal_scale, convert_coordinates, set_origin
+from .filtering import smooth_positions
 from .kinematics import calculate_kinematics
 from .marker_tracker import track_marker
 from .video_loader import load_video
@@ -16,12 +17,17 @@ def analyze_video(
     hsv_lower=None,
     hsv_upper=None,
     min_area=None,
+    use_filter=False,
+    window_length=5,
+    polyorder=2,
 ):
     """영상에서 (프레임 번호, 시간, 위치, 속도, 가속도) 목록을 구한다.
 
     두 기준점은 원본 프레임의 픽셀 좌표다. 첫 검출점이 위치의 원점이며,
     영상처럼 오른쪽이 +x, 아래쪽이 +y다. 길이 단위는 real_distance를 따른다.
     지정하지 않은 검출 설정에는 추적기의 기본값을 사용한다.
+    위치는 보정한 측정값이다. use_filter가 참이면 속도와 가속도만
+    사비츠키–골레이로 평활화한 위치를 중앙차분해 계산한다.
     """
     if not isfinite(real_distance) or real_distance <= 0:
         raise ValueError("기준점 사이의 실제 길이는 유한한 양수여야 합니다.")
@@ -56,4 +62,13 @@ def analyze_video(
         (frame_number, time, convert_coordinates(position, scale))
         for (frame_number, time, _), position in zip(observations, relative_positions)
     ]
-    return calculate_kinematics(calibrated)
+    if not use_filter:
+        return calculate_kinematics(calibrated)
+
+    smoothed = smooth_positions(calibrated, window_length=window_length, polyorder=polyorder)
+    derivatives = calculate_kinematics(smoothed)
+    return [
+        (frame, time, position, velocity, acceleration)
+        for (frame, time, position), (_, _, _, velocity, acceleration)
+        in zip(calibrated, derivatives)
+    ]

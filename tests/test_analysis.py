@@ -75,3 +75,17 @@ class AnalysisTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "같은 위치"):
             analyze_video("sample.avi", (0, 0), [0, 0], 10)
         self.load_video.assert_not_called()
+
+    def test_filter_changes_derivatives_but_preserves_measured_positions(self):
+        self.track_marker.return_value = [
+            (i, i * 0.25, (i + (5 if i == 2 else 0), 0))
+            for i in range(9)
+        ]
+        default = self.analyze()
+        self.assertEqual(self.analyze(use_filter=False), default)
+
+        filtered = self.analyze(use_filter=True)
+        self.assertEqual([row[:3] for row in filtered], [row[:3] for row in default])
+        self.assertEqual([row[0] for row in filtered if row[4] is not None], [3, 4, 5])
+        self.assertAlmostEqual(filtered[3][3][0], -24 / 7)
+        self.assertAlmostEqual(filtered[3][4][0], -320 / 7)
