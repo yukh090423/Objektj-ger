@@ -5,3 +5,4 @@ pandas
 streamlit
 plotly
 scipy
+streamlit-image-coordinates>=0.4.1
