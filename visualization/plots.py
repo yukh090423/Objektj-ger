@@ -1,3 +1,5 @@
+from math import hypot
+
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
@@ -11,15 +13,8 @@ def plot_motion(results, length_unit, *, filtered_results=None):
     비교하려면 results에 필터를 끈 결과를, filtered_results에 같은
     영상에서 필터를 켠 결과를 전달한다. 측정 위치는 한 번만 표시한다.
     """
-    results = list(results)
-    if not results:
-        raise ValueError("표시할 분석 결과가 없습니다. 먼저 영상을 분석하세요.")
-
+    results, filtered_results = _plot_records(results, filtered_results)
     comparing = filtered_results is not None
-    if comparing:
-        filtered_results = list(filtered_results)
-        if not filtered_results:
-            raise ValueError("필터를 적용한 비교 결과가 비어 있습니다.")
 
     figure = make_subplots(
         rows=3,
@@ -67,3 +62,76 @@ def _add_components(figure, results, row, label, dash, showlegend):
             row=row,
             col=1,
         )
+
+
+def plot_motion_summary(results, length_unit, *, filtered_results=None):
+    """이동 궤적과 시간별 속력·가속도 크기를 표시한다."""
+    results, filtered_results = _plot_records(results, filtered_results)
+    figure = make_subplots(
+        rows=3, cols=1, subplot_titles=("이동 궤적", "속력", "가속도 크기")
+    )
+    times = [record[1] for record in results]
+    positions = [record[2] for record in results]
+    figure.add_trace(
+        go.Scatter(
+            x=[None if position is None else position[0] for position in positions],
+            y=[None if position is None else position[1] for position in positions],
+            customdata=times,
+            hovertemplate=(
+                "시간 %{customdata:.3f} 초<br>x %{x:.3f} " + length_unit
+                + "<br>y %{y:.3f} " + length_unit + "<extra></extra>"
+            ),
+            mode="lines+markers",
+            marker={"size": 4},
+            line={"color": COMPONENT_COLORS["x"]},
+            connectgaps=False,
+            showlegend=False,
+        ),
+        row=1, col=1,
+    )
+    figure.update_xaxes(title_text=f"x ({length_unit})", constrain="domain", row=1, col=1)
+    figure.update_yaxes(
+        title_text=f"y ({length_unit})", scaleanchor="x", scaleratio=1,
+        constrain="domain", row=1, col=1,
+    )
+
+    comparing = filtered_results is not None
+    series = [(results, "필터 끔", "solid", COMPONENT_COLORS["x"])]
+    if comparing:
+        series.append((filtered_results, "필터 켬", "dot", COMPONENT_COLORS["y"]))
+
+    for row, unit in ((2, f"{length_unit}/s"), (3, f"{length_unit}/s²")):
+        figure.update_yaxes(title_text=unit, row=row, col=1)
+        for records, label, dash, color in series:
+            figure.add_trace(
+                go.Scatter(
+                    x=[record[1] for record in records],
+                    y=[None if record[row + 1] is None else hypot(*record[row + 1])
+                       for record in records],
+                    name=label,
+                    legendgroup=label,
+                    showlegend=comparing and row == 2,
+                    mode="lines+markers",
+                    marker={"size": 4},
+                    line={"color": color, "dash": dash},
+                    connectgaps=False,
+                ),
+                row=row, col=1,
+            )
+
+    figure.update_xaxes(matches="x3", showticklabels=False, row=2, col=1)
+    figure.update_xaxes(title_text="시간 (초)", row=3, col=1)
+    figure.update_layout(height=900, legend={"orientation": "h", "y": -0.1})
+    return figure
+
+
+def _plot_records(results, filtered_results):
+    results = list(results)
+    if not results:
+        raise ValueError("표시할 분석 결과가 없습니다. 먼저 영상을 분석하세요.")
+
+    if filtered_results is not None:
+        filtered_results = list(filtered_results)
+        if not filtered_results:
+            raise ValueError("필터를 적용한 비교 결과가 비어 있습니다.")
+    return results, filtered_results

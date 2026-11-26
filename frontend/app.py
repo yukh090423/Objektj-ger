@@ -13,7 +13,7 @@ from core.analysis import analyze_video
 from core.marker_tracker import BLUE_HSV_LOWER, BLUE_HSV_UPPER, MIN_MARKER_AREA_PX2
 from core.video_loader import extract_frame, load_video
 from export.csv_exporter import export_motion_csv
-from visualization.plots import plot_motion
+from visualization.plots import plot_motion, plot_motion_summary
 
 
 SAMPLE_CONFIG = Path(__file__).resolve().parents[1] / "data" / "objektjaeger_blue_marker_test.json"
@@ -132,6 +132,7 @@ def select_points(frame, roi, state, key):
 
 
 def run_analysis(source, points, distance, mode, options):
+    options = {**options, "y_up": True}
     with video_path(source) as path, warnings.catch_warnings(record=True) as notices:
         warnings.simplefilter("always", RuntimeWarning)
         results = analyze_video(path, *points, distance, use_filter=mode == FILTER_MODES[1], **options)
@@ -226,7 +227,12 @@ def main():
         st.warning(message)
     detected = sum(position is not None for _, _, position, _, _ in results)
     st.write(f"마커 검출 {detected}/{len(results)}프레임")
-    st.plotly_chart(plot_motion(results, unit, filtered_results=comparison))
+    st.caption("오른쪽 +x · 위쪽 +y")
+    view = st.radio("결과 보기", ("기본 보기", "성분 보기"), horizontal=True)
+    plot = plot_motion_summary if view == "기본 보기" else plot_motion
+    st.plotly_chart(plot(results, unit, filtered_results=comparison))
+    st.subheader("CSV 다운로드")
+    st.caption("오른쪽 +x · 위쪽 +y")
     st.download_button(
         "필터 끔 CSV 다운로드" if comparison is not None else "CSV 다운로드",
         export_motion_csv(results, unit), f"{filename}-motion.csv", mime="text/csv",

@@ -20,11 +20,13 @@ def analyze_video(
     use_filter=False,
     window_length=5,
     polyorder=2,
+    y_up=False,
 ):
     """영상에서 (프레임 번호, 시간, 위치, 속도, 가속도) 목록을 구한다.
 
     두 기준점은 원본 프레임의 픽셀 좌표다. 첫 검출점이 위치의 원점이며,
-    영상처럼 오른쪽이 +x, 아래쪽이 +y다. 길이 단위는 real_distance를 따른다.
+    오른쪽이 +x다. 기본 +y는 영상과 같은 아래쪽이며 y_up=True이면 위쪽이다.
+    길이 단위는 real_distance를 따른다.
     지정하지 않은 검출 설정에는 추적기의 기본값을 사용한다.
     위치는 보정한 측정값이다. use_filter가 참이면 속도와 가속도만
     사비츠키–골레이로 평활화한 위치를 중앙차분해 계산한다.
@@ -62,6 +64,11 @@ def analyze_video(
         (frame_number, time, convert_coordinates(position, scale))
         for (frame_number, time, _), position in zip(observations, relative_positions)
     ]
+    if y_up:
+        for _, _, position in calibrated:
+            if position is not None:
+                position[1] = -position[1]
+
     if not use_filter:
         return calculate_kinematics(calibrated)
 
