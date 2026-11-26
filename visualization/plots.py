@@ -64,8 +64,12 @@ def _add_components(figure, results, row, label, dash, showlegend):
         )
 
 
-def plot_motion_summary(results, length_unit, *, filtered_results=None):
-    """이동 궤적과 시간별 속력·가속도 크기를 표시한다."""
+def plot_motion_summary(results, length_unit, *, filtered_results=None, use_filter=False):
+    """이동 궤적과 시간별 속력·가속도 크기를 표시한다.
+
+    단일 결과의 필터 적용 여부는 use_filter로 전달한다. 비교에서는
+    results가 필터를 끈 결과이고 filtered_results가 필터를 켠 결과다.
+    """
     results, filtered_results = _plot_records(results, filtered_results)
     figure = make_subplots(
         rows=3, cols=1, subplot_titles=("이동 궤적", "속력", "가속도 크기")
@@ -96,7 +100,8 @@ def plot_motion_summary(results, length_unit, *, filtered_results=None):
     )
 
     comparing = filtered_results is not None
-    series = [(results, "필터 끔", "solid", COMPONENT_COLORS["x"])]
+    label = "필터 켬" if use_filter and not comparing else "필터 끔"
+    series = [(results, label, "solid", COMPONENT_COLORS["x"])]
     if comparing:
         series.append((filtered_results, "필터 켬", "dot", COMPONENT_COLORS["y"]))
 

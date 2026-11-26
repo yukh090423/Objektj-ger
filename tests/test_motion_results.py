@@ -66,3 +66,17 @@ class MotionResultTests(unittest.TestCase):
         self.assertEqual(summary.data[3].y, original.data[2].y)
         self.assertEqual(summary.data[2].line.dash, "dot")
         self.assertEqual(summary.data[4].line.dash, "dot")
+
+    def test_summary_derivative_labels_match_filter_state(self):
+        records = [(0, 0.0, (1, 2), (3, 4), (5, 6))]
+        for options, expected in (
+            ({}, ["필터 끔"]),
+            ({"use_filter": False}, ["필터 끔"]),
+            ({"use_filter": True}, ["필터 켬"]),
+            ({"filtered_results": records}, ["필터 끔", "필터 켬"]),
+        ):
+            figure = plot_motion_summary(records, "mm", **options)
+            for panel in ("y2", "y3"):
+                with self.subTest(options=options, panel=panel):
+                    names = [trace.name for trace in figure.data if trace.yaxis == panel]
+                    self.assertEqual(names, expected)

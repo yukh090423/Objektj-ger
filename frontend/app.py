@@ -229,8 +229,13 @@ def main():
     st.write(f"마커 검출 {detected}/{len(results)}프레임")
     st.caption("오른쪽 +x · 위쪽 +y")
     view = st.radio("결과 보기", ("기본 보기", "성분 보기"), horizontal=True)
-    plot = plot_motion_summary if view == "기본 보기" else plot_motion
-    st.plotly_chart(plot(results, unit, filtered_results=comparison))
+    if view == "기본 보기":
+        figure = plot_motion_summary(
+            results, unit, filtered_results=comparison, use_filter=mode == FILTER_MODES[1],
+        )
+    else:
+        figure = plot_motion(results, unit, filtered_results=comparison)
+    st.plotly_chart(figure)
     st.subheader("CSV 다운로드")
     st.caption("오른쪽 +x · 위쪽 +y")
     st.download_button(
